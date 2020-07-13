@@ -1,0 +1,6 @@
+{
+  "logger": {
+    "logPrefix": "website-skeleton",
+    "logLevel": "trace"
+  }
+}
