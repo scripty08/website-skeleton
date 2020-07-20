@@ -2,6 +2,9 @@ import { Server, IndexController } from '@scripty/server';
 import dotenv from 'dotenv'
 import { mongo } from '@scripty/mongo';
 import { RoutesController } from '@scripty/routes';
+import { ModulesController } from '@scripty/modules';
+import ArticlesController from '@scripty/articles';
+import { AuthController } from '@scripty/auth';
 
 const init = async () => {
     dotenv.config();
@@ -22,8 +25,11 @@ const init = async () => {
     const mongoose = await mongo(mongoConfig);
 
     await server.setDatabase(mongoose);
+    await server.addController(new AuthController());
     await server.addController(new IndexController({ title: '@scripty/website-skeleton' }));
     await server.addController(new RoutesController());
+    await server.addController(new ModulesController());
+    await server.addController(new ArticlesController());
     server.start(3008);
 };
 
