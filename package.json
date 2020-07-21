@@ -31,7 +31,7 @@
     "@scripty/react-articles": "^0.1.9",
     "@scripty/react-header": "^0.1.8",
     "@scripty/react-login": "^0.1.1",
-    "@scripty/react-modules": "^0.1.1",
+    "@scripty/react-modules": "^0.1.4",
     "@scripty/react-store": "^0.7.13",
     "@scripty/routes": "^0.1.1",
     "@scripty/server": "^0.3.4",

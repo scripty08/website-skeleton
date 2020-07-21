@@ -21,29 +21,35 @@ export const Layout = () => {
     const routes = routesStore.getAt(0);
     const topNaviRoutes = routes.get('Top Navi');
     const userMenuRoutes = routes.get('Login');
-    const activeRoutes = getSelectedKeys(routes['Top Navi'], window.location, '');
-    const key = activeRoutes.slice(-1).pop();
+    const [key, setKey] = useState(null);
+    const [editMode, setEditMode] = useState(false);
+    const placementsTemplate = [[], [], []];
 
     useEffect(() => {
         user.set(window.__INITIAL_STATE__);
     }, []);
 
     useEffect(() => {
-        routesStore.proxy.findRoutes();
+        fetchRoutes();
     }, []);
 
-    useEffect(() => {
-        modulesStore.proxy.findModules({ assignment: key });
-    }, [routes]);
+    const fetchRoutes = async () => {
+        let routes = await routesStore.proxy.findRoutes();
+        const activeRoutes = getSelectedKeys(routes.entries[0]['Top Navi'], window.location, '');
+        setKey(activeRoutes.slice(-1).pop());
+    }
 
     useEffect(() => {
-        placementsStore.proxy.findPlacements({ assignment: key });
+        key ? modulesStore.proxy.findModules({ assignment: key }) : null;
+    }, [key, routes]);
+
+    useEffect(() => {
+        key ? placementsStore.proxy.findPlacements({ assignment: key }) : null
     }, [modulesStore.data]);
 
     const onClick = async (key, selectedKeys) => {
         setSelectedKeys(selectedKeys);
-        await modulesStore.proxy.findModules({ assignment: key });
-        await placementsStore.proxy.findPlacements({ assignment: key });
+        setKey(key);
     };
 
     const onSaveBtnClick = async () => {
@@ -54,34 +60,49 @@ export const Layout = () => {
             await modulesStore.proxy.updateModules(dirtyModules);
         }
         if (dirtyPlacements) {
-            await placementsStore.proxy.updatePlacements(placementsStore.data);
+            placementsStore.getAt(0).set({assignment: key});
+            await placementsStore.proxy.updatePlacements([placementsStore.getAt(0)]);
         }
+    };
+
+    const PluginConfigs = {
+        Article: [{
+            title: '',
+            html: '',
+            edit: true
+        }],
+        Login: [{
+            title: '',
+            loginPath: '/login'
+        }]
     };
 
     const onAddBtnClick = (type) => {
         const id = getNewItemId(placementsRecords.placements);
         let model = modulesStore.createModel({
             item_id: id,
-            type: 'Article',
+            type: type,
+            new: true,
             assignment: {
                 type: 'selected',
                 value: [
-                    'Dashboard'
+                    key
                 ]
             },
-            plugin: [{
-                title: '',
-                html: '',
-                edit: true
-            }]
+            plugin: PluginConfigs[type]
         });
 
         model.setDirty();
         modulesStore.setData(model);
 
-        const record = placementsStore.data[0];
+        const record = placementsStore.getAt(0);
+
+
+        if (record.placements.length === 0) {
+            record.set({placements: placementsTemplate});
+        }
         record.placements[1].unshift({ id: id });
-        record.set(record.placements);
+        record.set(record);
         record.setDirty();
     }
 
@@ -93,6 +114,26 @@ export const Layout = () => {
 
     const LoginComponent = () => {
         return <Login loginPath={'/'} onLoginSubmit={onSubmit} />
+    }
+
+    const onArticleOkBtnClick = (item_id, response) => {
+
+        modulesStore.data.map(function (rec) {
+            if (rec.item_id === item_id) {
+                rec.plugin[0] = response;
+                rec.setDirty();
+                delete rec['callback']
+                return rec;
+            }
+                return rec;
+        });
+
+        modulesStore.setData(modulesStore.data);
+        setEditMode(false);
+    }
+
+    const ArticleComponent = (props) => {
+        return <Article {...props} onOkBtnClick={onArticleOkBtnClick.bind(null, props.item_id)} showEditBtn={user.loggedIn} />
     }
 
     return (
@@ -111,14 +152,26 @@ export const Layout = () => {
                 style={{paddingTop: 30}}
                 placements={placementsRecords.placements}
                 setPlacements={(placements) => {
-                    placementsRecords.set({ placements });
+
+                    let pal = placements;
+                    if (placements.length < 3) {
+                        pal = pal.concat([[]])
+                    }
+                    if (placements.length < 2) {
+                        pal = pal.concat([[], []])
+                    }
+                    placementsRecords.set({
+                        placements: pal
+                    });
                     placementsRecords.setDirty();
+
+
                 }}
-                Components={{ Article, Login: LoginComponent}}
+                Components={{ Article: ArticleComponent, Login: LoginComponent}}
                 onSaveBtnClick={onSaveBtnClick}
                 onAddBtnClick={onAddBtnClick}
                 editing={user.loggedIn}
-                menuItems={['Article']}
+                menuItems={['Article', 'Login']}
                 modules={modulesStore.data}
                 records={records}
             />
