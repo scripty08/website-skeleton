@@ -5,15 +5,13 @@ import { Layout } from './Layout';
 import { StoreProvider } from '@scripty/react-store';
 import usersStore from './usersStore';
 import routesStore from './routesStore';
-import modulesStore from './modulesStore';
 import loginStore from './loginStore';
-import placementsStore from './placementsStore';
+import boardsStore from './boardsStore';
 
 let defaultStores = {
     usersStore,
     routesStore,
-    modulesStore,
-    placementsStore,
+    boardsStore,
     loginStore
 };
 

@@ -3,27 +3,25 @@ import './Layout.scss';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Header, getSelectedKeys } from '@scripty/react-header';
 import { useStore } from '@scripty/react-store';
-import { getNewItemId, Modules } from '@scripty/react-modules';
+import { Board } from '@scripty/react-board';
+import { EditButton, SaveButton } from '@scripty/react-buttons';
 import { Article } from '@scripty/react-articles';
 import { Login } from '@scripty/react-login';
-import placementsStore from './placementsStore';
+import { nanoid } from 'nanoid';
 
 export const Layout = () => {
 
     const [ selectedKeys, setSelectedKeys ] = useState([])
     const { routesStore } = useStore('routesStore');
     const { loginStore } = useStore('loginStore');
-    const { modulesStore } = useStore('modulesStore');
-    const { placementsStore } = useStore('placementsStore');
-    const records = modulesStore.getAt(0);
-    const placementsRecords = placementsStore.getAt(0);
-    const user = loginStore.getAt(0);
     const routes = routesStore.getAt(0);
+    const user = loginStore.getAt(0);
     const topNaviRoutes = routes.get('Top Navi');
     const userMenuRoutes = routes.get('Login');
     const [key, setKey] = useState(null);
-    const [editMode, setEditMode] = useState(false);
-    const placementsTemplate = [[], [], []];
+    const { boardsStore } = useStore('boardsStore');
+    const data = boardsStore.getAt(0);
+    const [editing, setEditing] = useState(false);
 
     useEffect(() => {
         user.set(window.__INITIAL_STATE__);
@@ -40,70 +38,51 @@ export const Layout = () => {
     }
 
     useEffect(() => {
-        key ? modulesStore.proxy.findModules({ assignment: key }) : null;
-    }, [key, routes]);
-
-    useEffect(() => {
-        key ? placementsStore.proxy.findPlacements({ assignment: key }) : null
-    }, [modulesStore.data]);
+        key ? boardsStore.proxy.read({ assignment: key }) : null
+    }, [key]);
 
     const onClick = async (key, selectedKeys) => {
         setSelectedKeys(selectedKeys);
         setKey(key);
     };
 
-    const onSaveBtnClick = async () => {
-        const dirtyModules = modulesStore.getDirtyRecords();
-        const dirtyPlacements = placementsStore.getDirtyRecords();
+    const onSave = () => {
+        boardsStore.proxy.update({ assignment: 'Dashboard', ...data });
+        setEditing(!editing);
+    }
 
-        if (dirtyModules) {
-            await modulesStore.proxy.updateModules(dirtyModules);
-        }
-        if (dirtyPlacements) {
-            placementsStore.getAt(0).set({assignment: key});
-            await placementsStore.proxy.updatePlacements([placementsStore.getAt(0)]);
-        }
-    };
+    const onEdit = () => {
+        setEditing(!editing);
+    }
 
-    const PluginConfigs = {
-        Article: [{
-            title: '',
-            html: '',
-            edit: true
-        }],
-        Login: [{
-            title: '',
-            loginPath: '/login'
-        }]
-    };
+    const onDelete = (task) => {
+        delete data.tasks[task.id]
+        data.set(data);
+        boardsStore.setData(data);
+    }
 
-    const onAddBtnClick = (type) => {
-        const id = getNewItemId(placementsRecords.placements);
-        let model = modulesStore.createModel({
-            item_id: id,
-            type: type,
-            new: true,
-            assignment: {
-                type: 'selected',
-                value: [
-                    key
-                ]
-            },
-            plugin: PluginConfigs[type]
-        });
+    const onCancel = (task) => {
+        delete data.tasks[task.id]
+        data.set(data);
+        boardsStore.setData(data);
+    }
 
-        model.setDirty();
-        modulesStore.setData(model);
+    const onAddBtnClick = (columnId) => {
+        let id = nanoid();
 
-        const record = placementsStore.getAt(0);
-
-
-        if (record.placements.length === 0) {
-            record.set({placements: placementsTemplate});
-        }
-        record.placements[1].unshift({ id: id });
-        record.set(record);
-        record.setDirty();
+        data.tasks[id] = {
+            id: id,
+            type: 'Article',
+            edit: true,
+            content: {
+                title: '',
+                html: '',
+            }
+        };
+        data.set({assignment: key})
+        data.columns[columnId].taskIds.unshift(id);
+        data.set(data);
+        boardsStore.setData(data);
     }
 
     const onSubmit = (data) => {
@@ -116,24 +95,24 @@ export const Layout = () => {
         return <Login loginPath={'/'} onLoginSubmit={onSubmit} />
     }
 
-    const onArticleOkBtnClick = (item_id, response) => {
-
-        modulesStore.data.map(function (rec) {
-            if (rec.item_id === item_id) {
-                rec.plugin[0] = response;
-                rec.setDirty();
-                delete rec['callback']
-                return rec;
-            }
-                return rec;
-        });
-
-        modulesStore.setData(modulesStore.data);
-        setEditMode(false);
+    const onOkBtnClick = (task, content) => {
+        data.tasks[task.id].content = content;
+        delete data.tasks[task.id]['edit'];
+        data.set(data);
+        boardsStore.setData(data);
     }
 
-    const ArticleComponent = (props) => {
-        return <Article {...props} onOkBtnClick={onArticleOkBtnClick.bind(null, props.item_id)} showEditBtn={user.loggedIn} />
+    const ArticleCard = (props) => {
+        return (
+            <Article
+                edit={props.edit}
+                {...props.content}
+                showToolbar={props.editing}
+                onOkBtnClick={onOkBtnClick.bind(null, props)}
+                onCancelBtnClick={onCancel.bind(null, props)}
+                onDeleteBtnClick={onDelete.bind(null, props)}
+            />
+        );
     }
 
     return (
@@ -148,32 +127,14 @@ export const Layout = () => {
                 logo={'Skeleton'}
                 layout={'sized'}
             />
-            <Modules
-                style={{paddingTop: 30}}
-                placements={placementsRecords.placements}
-                setPlacements={(placements) => {
-
-                    let pal = placements;
-                    if (placements.length < 3) {
-                        pal = pal.concat([[]])
-                    }
-                    if (placements.length < 2) {
-                        pal = pal.concat([[], []])
-                    }
-                    placementsRecords.set({
-                        placements: pal
-                    });
-                    placementsRecords.setDirty();
-
-
-                }}
-                Components={{ Article: ArticleComponent, Login: LoginComponent}}
-                onSaveBtnClick={onSaveBtnClick}
+            <SaveButton onClick={onSave}/>
+            <EditButton onClick={onEdit}/>
+            <Board
+                state={data}
+                setState={state => data.set(state)}
+                cards={{ Article: ArticleCard, Login: LoginComponent }}
+                editing={editing}
                 onAddBtnClick={onAddBtnClick}
-                editing={user.loggedIn}
-                menuItems={['Article', 'Login']}
-                modules={modulesStore.data}
-                records={records}
             />
         </Router>
     );

@@ -2,7 +2,7 @@ import { Server, IndexController } from '@scripty/server';
 import dotenv from 'dotenv'
 import { mongo } from '@scripty/mongo';
 import { RoutesController } from '@scripty/routes';
-import { ModulesController } from '@scripty/modules';
+import BoardController from '@scripty/board';
 import ArticlesController from '@scripty/articles';
 import { AuthController } from '@scripty/auth';
 
@@ -28,7 +28,7 @@ const init = async () => {
     await server.addController(new AuthController());
     await server.addController(new IndexController({ title: '@scripty/website-skeleton' }));
     await server.addController(new RoutesController());
-    await server.addController(new ModulesController());
+    await server.addController(new BoardController());
     await server.addController(new ArticlesController());
     server.start(3008);
 };
