@@ -1,5 +1,5 @@
 import React from 'react';
-
+import '@scripty/styles';
 import { hot } from 'react-hot-loader/root';
 import { Layout } from './Layout';
 import { StoreProvider } from '@scripty/react-store';

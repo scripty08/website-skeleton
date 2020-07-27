@@ -5,6 +5,7 @@ export default createStore({
     model: {
         fields: [
             { name: 'assignment', type: 'string', default: '' },
+            { name: 'placement', type: 'string', default: '' },
             { name: 'tasks', type: 'object' },
             { name: 'columns', type: 'object', default: {
                     "column-1" : {
@@ -21,12 +22,18 @@ export default createStore({
                         "id" : "column-3",
                         "title" : "Column 3",
                         "taskIds" : []
+                    },
+                    "footer-1" : {
+                        "id" : "footer-1",
+                        "title" : "Footer 1",
+                        "taskIds" : []
                     }
                 }},
             { name: 'columnOrder', type: 'array', default:[
                     "column-3",
                     "column-2",
-                    "column-1"
+                    "column-1",
+                    "footer-1"
                 ]},
         ]
     },
