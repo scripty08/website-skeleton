@@ -57,25 +57,11 @@ export const Layout = () => {
         setEditing(!editing);
     }
 
-    const onDelete = (task) => {
-        delete data.tasks[task.id]
-        data.set(data);
-        boardsStore.setData(data);
-    }
-
-    const onCancel = (task) => {
-        if (task.content.title === '' && task.content.title === '') {
-            delete data.tasks[task.id]
-            data.set(data);
-            boardsStore.setData(data);
-        }
-    }
-
-    const onAddBtnClick = (columnId) => {
+    const onAddBtnClick = (columnId, type) => {
         let id = nanoid();
         data.tasks[id] = {
             id: id,
-            type: 'Article',
+            type: type,
             edit: true,
             content: {
                 title: '',
@@ -98,22 +84,39 @@ export const Layout = () => {
         return <Login loginPath={'/'} onLoginSubmit={onSubmit} />
     }
 
-    const onOkBtnClick = (task, content) => {
-        content.tasks[task.id].content = content;
-        delete content.tasks[task.id]['edit'];
-        content.set(content);
-        boardsStore.setData(content);
+    const onOkBtnClick = (id, article) => {
+        data.tasks[id].content = article;
+        delete data.tasks[id]['edit'];
+        data.set(data);
+        boardsStore.setData(data);
+    }
+
+    const onDeleteBtnClick = (id) => {
+        delete data.tasks[id]
+        data.set(data);
+        boardsStore.setData(data);
+    }
+
+    const onCancelBtnClick = (id, article) => {
+        if (article.title === '' && article.title === '') {
+            delete data.tasks[id]
+            data.set(data);
+            boardsStore.setData(data);
+        }
     }
 
     const ArticleCard = (props) => {
+        const { edit, content, editing, id } = props;
+
         return (
             <Article
-                edit={props.edit}
-                {...props.content}
-                showToolbar={props.editing}
-                onOkBtnClick={onOkBtnClick.bind(null, props)}
-                onCancelBtnClick={onCancel.bind(null, props)}
-                onDeleteBtnClick={onDelete.bind(null, props)}
+                edit={edit}
+                {...content}
+                id={id}
+                showToolbar={editing}
+                onOkBtnClick={onOkBtnClick.bind(null, id )}
+                onCancelBtnClick={onCancelBtnClick.bind(null, id, content )}
+                onDeleteBtnClick={onDeleteBtnClick.bind(null, id, content )}
             />
         );
     }
