@@ -1,13 +1,12 @@
 #root {
     height: 100%;
-}
-#root {
     display: flex;
     flex-direction: column;
 }
-.content {
+#container {
     flex: 1 0 auto;
+    background-color: #fcfcfc;
 }
-.footer {
+#footer {
     flex-shrink: 0;
 }
