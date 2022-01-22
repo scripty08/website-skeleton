@@ -42,7 +42,7 @@
     "@scripty/routes": "^0.1.1",
     "@scripty/server": "^0.3.4",
     "@scripty/styles": "^0.1.40",
-    "nanoid": "^3.1.10",
+    "nanoid": "^3.1.31",
     "prop-types": "^15.7.2",
     "react": "16.11.0",
     "react-dom": "16.11.0",
